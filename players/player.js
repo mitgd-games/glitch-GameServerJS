@@ -58,7 +58,7 @@ function init(){
 	this.counters_init();
 	this.imagination_init();
 	this.furniture_init();
-	
+
 	// Hardcoded values matching the client
 	this.h = 112;
 	this.w = 59;
@@ -85,10 +85,10 @@ function init(){
 	delete this.bag_size;
 	delete this.last_pet;
 	//delete this.home;
-	
+
 	if (this.starting_instance) this.starting_instance.apiDelete();
 	delete this.starting_instance;
-	
+
 	if (!this.is_god && this.location_history) delete this.location_history;
 }
 
@@ -108,7 +108,7 @@ function onLogin(){
 	if (!isZilloween()) {
 		this.clearZilloweenData();
 	}
-	
+
 	//
 	// tell reverse contacts that we've come online
 	//
@@ -125,12 +125,12 @@ function onLogin(){
 		}
 	};
 	var online = apiCallMethodForOnlinePlayers('buddies_send_buddy_online', tsids, args);
-	
+
 	this.date_last_login = time();
-	
+
 	// Do any region-specific log-in stuff
 	this.location.region_login(this);
-	
+
 	if (!this.last_location) { this.last_location = this.location; }
 
 	this.tp_queue = [];
@@ -144,7 +144,7 @@ function onLogin(){
 //
 
 function onRelogin(){
-	
+
 	log.info('----------------- onReLogin: '+this.tsid);
 
 	this.init();
@@ -158,11 +158,11 @@ function onLoggedin(){
 
 	this.buffs_login();
 	this.houses_login();
-	
+
 	//
 	// learn new recipes created since we learned the skill
 	//
-	
+
 	this.skills_learn_missing_recipes();
 	this.achievements_login();
 	this.quests_login();
@@ -171,32 +171,32 @@ function onLoggedin(){
 	this.trading_rollback();
 	this.rewards_return();
 	this.conversations_login();
-	
+
 	this.date_last_loggedin = time();
-	
+
 	//
 	// Resume any overlays
 	//
-	
+
 	if (this.last_overlay_script){
 		delete this.last_overlay_script;
 		this.run_overlay_script(this.last_overlay_script);
 		this.apiSendMsg({ type: 'annc_flush' }); // HACKS!
 	}
-	
+
 	this.checkNewGameDay();
-	
+
 	this.apiCancelTimer('onPeriodicEnergyLoss');
 	this.apiSetTimer('onPeriodicEnergyLoss', 90000);
-	
+
 	// Periodically check for play time achievements:
 	this.apiSetTimer('onPlayTimeCheck', 120000);
-	
+
 	this.is_afk = false;
-	
+
 	// move any expired courier items into the mailbox.
 	this.mail_login();
-	
+
 	// Did someone recognize our death while we were logged out?
 	if (this.death_recognized) {
 		this.recognizeDeath(this.death_recognized.type, this.death_recognized.recognizer);
@@ -206,9 +206,9 @@ function onLoggedin(){
 	// fix broken quoin upgrades:
 	var coin_modifier = 0;
 	if (this.buffs_has('crazy_coin_collector')) coin_modifier = 50;
-	
+
 	this.stats_set_quoins_max_today(this.imagination_get_quoin_limit() + coin_modifier);
-	
+
 	// Mail 2011 Glitchmas Gift between 2011-12-24 @4pm and end of Glitchmas (2012-01-03 @10am)
 	/*if (config.is_dev || ((getTime()/1000 > 1324771200) && isGlitchmas())){
 		this.mail_send_special_item('glitchmas_cracker', 1, "Good news! The Glitchmas Yeti awoke from hibernation and sent us a box of these. We’re not sure what they are — though from the description on the packaging it seems to be some kind of explosive …<split butt_txt=\"Wot?\" />Yeah, we thought we should do the safe thing and get them out of the office as soon as possible. So we passed them on to you!<split butt_txt=\"Hmm. Thanks.\" />You might want to find a friend to pull it with, though. Who knows? Maybe there’s something inside. We’re too scared to look. Happy Glitchmas! — Tiny Speck");
@@ -250,7 +250,7 @@ function onLogout(){
 
 	var tsids = this.buddies_get_reverse_tsids();
 	var online = apiCallMethodForOnlinePlayers('buddies_send_buddy_offline', tsids, {tsid: this.tsid, label: this.label});
-	
+
 	//
 	// tell old location we've gone offline (this is to handle when client reloads mid-move, after player has been removed from old location already
 	//
@@ -261,7 +261,7 @@ function onLogout(){
 			pc: this.make_hash()
 		});
 	}
-	
+
 	//
 	// Record time played and test for *real* logout
 	//
@@ -270,53 +270,53 @@ function onLogout(){
 		log.info(this.label + ' was logged in for ' + time_played + ' seconds.');
 		var d = new Date();
 		var day = d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate();
-		
+
 		// Only accurate as of 2011-04-13 1:30pm-ish
 		this.achievements_increment('time_played', day, time_played);
 		this.counters_increment('time_played', day, time_played);
 		if (!this.time_played) this.time_played = 0;
 		this.time_played += time_played;
-		
+
 		apiLogAction('LOGOUT', 'pc='+this.tsid);
 	}
-	
+
 	if (this['!current_overlay_script']){
 		this.last_overlay_script = this['!current_overlay_script'];
 		delete this['!current_overlay_script'];
 	}
-	
+
 	if (this['!mining']){
 		var rock = apiFindObject(this['!mining']);
 		if (rock){
 			rock.cancelMining(this);
 		}
 	}
-	
+
 	if (this['!clearing']){
 		var tree = apiFindObject(this['!clearing']);
 		if (tree){
 			tree.cancelClearing(this);
 		}
 	}
-	
+
 	if (this['!pulling']) {
 		var cracker = apiFindObject(this['!pulling']);
 		if (cracker){
 			cracker.cancelPulling(this);
 		}
 	}
-	
+
 	// Stop following and remove followers
 	this.stopFollowing();
 	this.removeFollowers();
-	
+
 	// Do any region-specific logout stuff
 	this.location.region_logout(this);
-	
+
 	this.is_afk = false;
-	
+
 	this.date_last_logout = time();
-	
+
 	// Cancel all courier items
 	this.mail_logout();
 
@@ -344,7 +344,7 @@ function onLogout(){
 
 function didStartStreetMove(){
 	this.did_start_move = true;
-	
+
 	/* Update data for hairball achievement */
 	if (this.buffs_has('hairball_dash')) {
 		this.buffs_hairball_leave_street();
@@ -405,14 +405,14 @@ function isOnLadder() {
 			}
 		}
 	}
-	
+
 	return null;
 }
 
 function isFlying(){
 //	log.info("dx="+this.dx);
 	if (this.dy<0) return false;
-	
+
 	var pls = this.location.geometry.platforms;
 	for(var plid in pls){
 		var pl= pls[plid];
@@ -422,9 +422,9 @@ function isFlying(){
 			}
 		}
 	}
-	
+
 	if (this.isOnLadder()) { return false; }
-	
+
 	return true;
 }
 
@@ -439,9 +439,9 @@ function isInAir(){
 
 function sendActivity(msg, from, no_growl, no_activity){
 	if (no_growl && no_activity) return;
-	
+
 	if (from === undefined) from = this;
-	
+
 	// Auto-prepend?
 	var auto_prepend = false;
 	if (from){
@@ -451,7 +451,7 @@ function sendActivity(msg, from, no_growl, no_activity){
 			auto_prepend = true;
 		}
 	}
-	
+
 	this.sendMsgOnline({
 		type: 'activity',
 		txt: msg,
@@ -471,7 +471,7 @@ function sendOnlineActivity(msg){
 
 function sendLocationActivity(msg, from, exclusions){
 	if (from === undefined) from = this;
-	
+
 	// Auto-prepend?
 	var auto_prepend = false;
 	if (from){
@@ -481,14 +481,14 @@ function sendLocationActivity(msg, from, exclusions){
 			auto_prepend = true;
 		}
 	}
-	
+
 	if (!exclusions) {
 		exclusions = [];
 	}
 	exclusions.push(this.tsid);
-	
+
 	//this.sendActivity("Sending location activity while excluding "+exclusions);
-	
+
 	this.location.apiSendMsgX({
 		type: 'activity',
 		txt: msg,
@@ -498,7 +498,7 @@ function sendLocationActivity(msg, from, exclusions){
 }
 
 function teleportToLocationVariableDelay(tsid, x, y, time, args){
-	
+
 	if (!apiIsPlayerOnline(this.tsid)){
 		return this.teleportToLocation(tsid, x, y, args);
 	}
@@ -509,12 +509,12 @@ function teleportToLocationVariableDelay(tsid, x, y, time, args){
 		'y': y,
 		'args': args
 	};
-	
+
 	this.apiSetTimer('handleDelayedTeleport', time);
 }
 
 function teleportToLocationDelayed(tsid, x, y, args){
-	
+
 	if (!apiIsPlayerOnline(this.tsid)){
 		return this.teleportToLocation(tsid, x, y, args);
 	}
@@ -525,14 +525,14 @@ function teleportToLocationDelayed(tsid, x, y, args){
 		'y': y,
 		'args': args
 	};
-	
+
 	this.apiSetTimer('handleDelayedTeleport', 500);
 }
 
 function handleDelayedTeleport(){
-	
+
 	if (this['!teleport_delayed'] && this['!teleport_delayed'].tsid){
-		
+
 		var t = this['!teleport_delayed'];
 		var ret = this.teleportToLocation(t.tsid, t.x, t.y, t.args);
 		if (ret['ok']){
@@ -541,7 +541,7 @@ function handleDelayedTeleport(){
 		else{
 			if (!this['!teleport_delayed'].attempts) this['!teleport_delayed'].attempts = 0;
 			this['!teleport_delayed'].attempts++;
-			
+
 			if (this['!teleport_delayed'].attempts < 10){
 				this.apiSetTimer('handleDelayedTeleport', 500);
 			}
@@ -557,7 +557,7 @@ function teleportToLocation(tsid, x, y, args){
 	if (!args) args = {};
 
 	log.info('Teleporting '+this+' to '+tsid+'.');
-	
+
 	if (this.apiPlayerHasLockForCurrentLocation()){
 		log.info('Tried to teleport '+this+' but the player had a location lock.');
 		return {
@@ -565,7 +565,7 @@ function teleportToLocation(tsid, x, y, args){
 			'error' : "player has location lock"
 		};
 	}
-	
+
 	apiLogAction('TELEPORT', 'pc='+this.tsid, 'location='+tsid, 'x='+x, 'y='+y);
 
 	var target = apiFindObject(tsid);
@@ -576,7 +576,7 @@ function teleportToLocation(tsid, x, y, args){
 			'error' : "can't find location"
 		};
 	}
-	
+
 	/*if (this.isLoggingIn){
 		log.info(this+' is logging in.');
 		return {
@@ -610,8 +610,8 @@ function teleportToLocation(tsid, x, y, args){
 
 	this.trading_cancel_auto();
 	delete this['!is_firefly_whistlin'];
-	
-	
+
+
 	//
 	// Get the target x,y
 	//
@@ -624,11 +624,11 @@ function teleportToLocation(tsid, x, y, args){
 	//
 	// Create an instance?
 	//
-	
+
 	if (tsid != this.location.tsid && target.instances_instance_me() && !args.ignore_instance_me){
 		var instance_id = target.instances_instance_me();
 		var max_members = target.instances_get_max_members();
-				
+
 		var instance = target.instances_next_instance(instance_id, max_members);
 		if (!instance){
 			var instance_options = target.instances_get_instance_options();
@@ -676,7 +676,7 @@ function teleportToLocation(tsid, x, y, args){
 	}else{
 		this.announce_sound('TELEPORT_AWAY');
 	}
-	
+
 
 	//
 	// moving within the same location?
@@ -703,9 +703,9 @@ function teleportToLocation(tsid, x, y, args){
 	//
 	// changing game servers?
 	//
-		
+
 	this['!teleporting'] = true;
-		
+
 	log.info("teleportToLocation ",target.tsid,"x=",x,"y=",y);
 	try{
 		var d = this.apiCheckIfNeedToMoveToAnotherGSAndGetMoveData(target.tsid, x, y);
@@ -793,21 +793,21 @@ function teleport_to_player(target){
 function onTimePlaying(){
 	// called every 1 minute you spend logged in
 	//log.info('player "'+this.label+'" has been playing for 1 minute');
-	
+
 	this.checkNewGameDay();
-	
+
 	if(!this['!in_house_deco_mode'] && !this.location.isParadiseLocation() && ((!this['!meditating'] || this['!meditating'] != 'transcendental'))) {
 		if (!this.location.is_newxp){
 			var mood_loss_percentage_multiplier = 1.0;
 			if (this.buffs_has('rookswort')){
 				mood_loss_percentage_multiplier = 0.5;
 			}
-			
+
 			var max_mood = Math.min(this.metabolics_get_max_mood(), 2000);
 
 			var mood_loss = Math.max(max_mood * (0.0025 * mood_loss_percentage_multiplier), 1);
 			var mood_percentage = this.metabolics_get_percentage('mood');
-			
+
 			if (mood_percentage > 80){
 				mood_loss = Math.max(max_mood * (0.015 * mood_loss_percentage_multiplier), 4);
 
@@ -821,7 +821,7 @@ function onTimePlaying(){
 			} else if (mood_percentage >= 50){
 				mood_loss = Math.max(max_mood * (0.005 * mood_loss_percentage_multiplier), 2);
 			}
-			
+
 			if (!this.has_done_intro){
 				if (this.metabolics_get_percentage('mood') <= 50) mood_loss = 0;
 			}
@@ -829,11 +829,11 @@ function onTimePlaying(){
 			if (mood_loss) this.metabolics_lose_mood(mood_loss, 1);
 		}
 	}
-	
+
 	this.apiSendMsg({
 		'type': 'time_passes'
 	});
-	
+
 	if (this.metabolics_get_percentage('energy') <= 10 && !this.buffs_has('walking_dead') && !this.is_dead){
 		if (this.deaths_today){
 			this.sendActivity('You are extremely low on energy! Find something to eat.');
@@ -854,17 +854,17 @@ function onTimePlaying(){
 function checkNewGameDay(){
 	var today = current_day_key();
 	if (!this.last_online_gameday || this.last_online_gameday.length < 8) this.last_online_gameday = today;
-	
+
 	if (today > this.last_online_gameday){
 		// Croaked?
 		if (this.is_dead){
 			this.apiSetTimer('checkNewGameDay', 1000);
 			return this.resurrect();
 		}
-		else if (this.end_esquibeth || 
+		else if (this.end_esquibeth ||
 				this.location.isInstance('waterfall_01') ||
 				this.location.isInstance('waterfall_02') ||
-				this.location.isInstance('waterfall_03') || 
+				this.location.isInstance('waterfall_03') ||
 				this.location.isInstance('waterfall_04_wider')) {
 			this.apiSetTimer('checkNewGameDay', 30*1000);
 			return;
@@ -886,8 +886,8 @@ function doNewDay(){
 	//
 	// A new day!!! Reset some things
 	//
-	
-	
+
+
 	// Re-fill energy
 	var energy = 0;
 	var mood = 0;
@@ -899,13 +899,13 @@ function doNewDay(){
 	apiLogAction('NEW_DAY', 'pc='+this.tsid, 'energy='+energy, 'mood='+mood);
 
 	var maxDonationXP = Math.round(this.stats_calc_level_from_xp(this.stats_get_xp()).xp_for_this * 0.1);
-	
+
 	var previous_time_played = this.getTimePlayed();
 	var session_time_played = time() - this.date_last_login;
 	if (this.isOnline() && (previous_time_played + session_time_played) >= 3600 && this.has_done_intro){
-		
+
 		var yesterday_key = this.last_online_gameday;
-		
+
 		var rsp = {
 			"type"			: "new_day",
 			"sound"			: "NEWDAY",
@@ -919,14 +919,14 @@ function doNewDay(){
 				mood: mood
 			}
 		};
-		
+
 		var hi_variants_tracker = apiFindObject(config.hi_variants_tracker);
 		rsp.hi_emote_leaderboard = hi_variants_tracker.get_all_counts();
 		hi_variants_tracker.calculate_pcs_daily_evasion_record_achieves(this);
-		
+
 		var levels = intval(this.daily_history_get(yesterday_key, 'level_up'));
 		if (levels) rsp.new_level = this.stats_get_level();
-		
+
 		var quests = this.daily_history_get(yesterday_key, 'quests_completed');
 		if (num_keys(quests)){
 			rsp.complete_quests = [];
@@ -937,7 +937,7 @@ function doNewDay(){
 				}
 			}
 		}
-		
+
 		var collections = this.daily_history_get(yesterday_key, 'collections');
 		if (num_keys(collections)){
 			rsp.complete_collections = [];
@@ -948,7 +948,7 @@ function doNewDay(){
 				}
 			}
 		}
-		
+
 		var skills = this.daily_history_get(yesterday_key, 'skills_learned');
 		if (num_keys(skills)){
 			rsp.new_skills = [];
@@ -956,7 +956,7 @@ function doNewDay(){
 				rsp.new_skills.push({name: this.skills_get_name(skills[i]), tsid: skills[i]});
 			}
 		}
-		
+
 		var achievements = this.daily_history_get(yesterday_key, 'achievements');
 		if (num_keys(achievements)){
 			rsp.new_badges = [];
@@ -976,13 +976,13 @@ function doNewDay(){
 				}
 			}
 		}
-		
+
 		this.apiSendMsg(rsp);
 
 		this.daily_history_archive(yesterday_key);
 		this.daily_history_reset();
 	}
-	
+
 	// Quoins
 	if (this.stats.quoins_today.value >= 100){
 		this.achievements_increment('coin_count', 'days_maxed');
@@ -990,12 +990,12 @@ function doNewDay(){
 	else{
 		this.achievements_set('coin_count', 'days_maxed', 0);
 	}
-	
+
 	this.stats_set_quoins_today(0);
-	
+
 	// fix broken quoin upgrades:
 	this.stats_set_quoins_max_today(this.imagination_get_quoin_limit());
-	
+
 	if (this.buffs_has('crazy_coin_collector')){
 		this.buffs_remove('crazy_coin_collector');
 	}
@@ -1003,23 +1003,23 @@ function doNewDay(){
 	// Reset daily rube trades
 	this.stats_set_rube_trades(0);
 	this.stats_set_rube_lure_disabled(false);
-	
+
 	// Food counter
 	this.food_today = 0;
-		
+
 	// Meditation counters
 	this.stats_set_meditation_today(0);
 	this.radiation_today = 0;
-	
+
 	// Deaths!
 	this.deaths_today = 0;
-	
+
 	// Butler quest
-	if (this.butlers_zombied_today) { 
+	if (this.butlers_zombied_today) {
 		delete this.butlers_zombied_today;
 		this.quests_set_counter("butlers_zombied", 0);
 	}
-	
+
 	// Reset daily favor limits
 	for(var i = 0; i < config.giants.length; ++i) {
 		var giant = config.giants[i];
@@ -1030,7 +1030,7 @@ function doNewDay(){
 	// reset daily donation xp limits
 	this.init_prop('stats', 'donation_xp_today', 0, 0, maxDonationXP);
 	this.stats['donation_xp_today'].apiSet(0);
-	
+
 	// Reset count for having seen the prompt for exceeding max donations
 	this.seenMaxDonationsPrompt = 0;
 
@@ -1047,7 +1047,7 @@ function doNewDay(){
 	}
 
 	delete this.stats.recipe_xp_today;
-	
+
 	// Reset daily counters
 	this.stats_reset_daily_counter();
 
@@ -1093,7 +1093,7 @@ function deleteMe(){
 	//
 	// empty bags
 	//
-	
+
 	this.trading_reset();
 	var items = this.apiGetAllItems();
 	for (var i in items){
@@ -1202,7 +1202,7 @@ function onCreate(){
 		this.metabolics_set_mood(80);
 		this.metabolics_set_energy(80);
 		this.stats_add_xp(100);
-		
+
 		this.createItem('hoe', 1);
 		this.createItem('watering_can', 1);
 		this.createItem('sammich', 3);
@@ -1211,24 +1211,24 @@ function onCreate(){
 		this.createItem('milk_butterfly', 3);
 		this.createItem('bubble_tea', 3);
 		this.createItem('cloud_11_smoothie', 3);
-		
+
 		delete this.skip_newux;
 		this.has_done_intro = 1;
 		//this.teleportToLocationDelayed('LLIF6R3R9GE1GQB', -412, -112); // burnabee
 		return;
 	}
-	
+
 	this.stats_set_currants(0); // formerly 100: http://bugs.tinyspeck.com/10801
 	this.metabolics_set_mood(55);
 	this.metabolics_set_energy(55);
 
 	this.has_done_intro = 0;
-	
+
 	// NEVER ACCESS stacked_physics_cache from outside of inc_physics!
 	// Consider this a private var, and use
 	// getStackedPhysics() to retrieve the value
 	this.stacked_physics_cache = null;
-	
+
 	this.physics_new = {};
 	this.setDefaultPhysics();
 
@@ -1248,11 +1248,11 @@ function croak(){
 	if (this.apiPlayerHasLockForCurrentLocation()) return 0;
 	if (this.is_dead || this.buffs_has('walking_dead') || this.location.isInHell()) return 0;
 	if (!this.has_done_intro || this.location.class_tsid == 'newbie_island') return 0;
-	
+
 	apiLogAction('CROAKED', 'pc='+this.tsid);
 	this.apiSendAnnouncement({type: 'stop_all_music'});
 	this.announce_sound('CROAK');
-	
+
 	if (!this.deaths_today) this.deaths_today = 0;
 	this.deaths_today++;
 	this.sendOnlineActivity('You croaked!');
@@ -1262,7 +1262,7 @@ function croak(){
 
 	// remove followers, including references.
 	this.removeFollowers();
-	
+
 	// If you die on transit, you resurrect at the previous station
 	if (this.location.is_transit){
 		var current_stop = this.location.transit_get_current_stop(this.location.instance_id);
@@ -1278,22 +1278,22 @@ function croak(){
 			x:	this.x,
 			y:	this.y
 		};
-		
+
 		if (this.location == this.home.interior) {
 			this.achievements_increment("croaked", "at_home", 1);
 		}
 	}
-	
+
 	this.grapes_squished = 0;
 	this.is_dead = 1;
-	
+
 	this.achievements_increment('player', 'deaths');
 
 
 	if (this.map_path) this.previous_map_path = this.map_path;
-	
+
 	//this.quests_offer('you_croaked', true);
-	
+
 	if (this.buffs_has('no_no_powder_crash')){
 		this.buffs_remove('no_no_powder_crash');
 	}
@@ -1301,16 +1301,16 @@ function croak(){
 	if (this.buffs_has('no_no_powder')){
 		this.buffs_remove('no_no_powder');
 	}
-	
+
 	var marker = this.location.createItemStack('graveside_marker', 1, this.x, this.y-29);
 	if (marker){
 		marker.setOwner(this);
 		this.setGraveMarker(marker);
 	}
-	
+
 	var pos = randInt(0, config.hell.x.length-1);
 	this.teleportToLocationDelayed(config.hell.tsid, config.hell.x[pos], config.hell.y[pos]);
-	
+
 	log.info(this+' finished croaking');
 	return 1;
 }
@@ -1329,16 +1329,16 @@ function resurrect(){
 
 	if (this.apiPlayerHasLockForCurrentLocation()) return 0;
 	if (!this.is_dead && !this.location.isInHell()) return 0;
-	
+
 	apiLogAction('RESURRECTED', 'pc='+this.tsid);
-	
+
 	//log.info('---------------- resurrect');
 	this.is_dead = 0;
 	delete this.grapes_squished;
 	if (this.grave_marker) {
 		this.grave_marker.onDisappear();
 	}
-	
+
 	this.announce_music_stop('HELL', 2);
 
 	if (this.buffs_has('pooped')){
@@ -1347,7 +1347,7 @@ function resurrect(){
 		this.metabolics_set_energy(this.metabolics.energy.top * 0.10);
 	}
 	if (this.metabolics_get_mood() > (this.metabolics.mood.top / 2)) this.metabolics_set_mood(this.metabolics.mood.top / 2);
-	
+
 	var dest;
 	var prev;
 	if (this.location.isInstance('hell_one')){
@@ -1368,12 +1368,12 @@ function resurrect(){
 			prev = dest.pols_get_entrance_outside();
 		}
 	}
-	
+
 	this.quests_set_flag('resurrected');
 	var tomorrow = timestamp_to_gametime(time()+ (game_days_to_ms(1)/1000));
 	tomorrow[3] = 0;
 	tomorrow[4] = 0;
-	
+
 
 	//
 	// Don't reapply the Pooped buff when emerging from hell.
@@ -1396,12 +1396,12 @@ function resurrect(){
 		this.clearPath();
 		this.apiSendMsg({type: 'clear_location_path'});
 	}
-	
+
 	// Clear follows, so we don't transfer other players out of hell without their grapey pennance having been paid
 	this.removeFollowers();
 
 	this.teleportToLocationDelayed(prev.tsid, prev.x, prev.y);
-	
+
 	delete this.resurrect_location;
 
 	// Recover feat rewards
@@ -1411,7 +1411,7 @@ function resurrect(){
 			'feat_id'	: this.feats_has_unclaimed_rewards()
 		});
 	}
-	
+
 	log.info(this+' finished resurrecting');
 	return 1;
 }
@@ -1428,7 +1428,7 @@ function removeDeathRecognitionDetails() {
 }
 
 function recognizeDeath(type, recognizer) {
-    
+
     //
 	// We need to push data on our death recognition onto
 	// the player either if they're offline and can't receive
@@ -1439,7 +1439,7 @@ function recognizeDeath(type, recognizer) {
 	if (!this.death_recognized){
 		this.death_recognized = {type: type, recognizer: recognizer};
 	}
-	
+
 	if (this.isOnline()) {
 		if (this.location.isInHellOne() && this.getQuestStatus('hell_hole') == 'none' && this.getQuestStatus('hell_quest') == 'none'){
 			this.quests_offer('hell_hole', true);
@@ -1480,31 +1480,31 @@ function respondToFollow(choice, details) {
 	var follower = getPlayer(details.follower_tsid);
 
 	if (follower['!follow_prompt']) follower.prompts_remove(follower['!follow_prompt']);
-	
+
 	if(choice == "accept") {
 		/* first, make sure we're still in range to be followed */
 		var distance = this.distanceFromPlayer(follower);
 		if(distance > 1000) {
 			follower.sendActivity("You were too far away to follow " + this.label + ".");
 			this.sendActivity(follower.label + " is too far away to follow you.");
-			
+
 			return;
 		}
-		
+
 		follower.apiStartFollowing(this.tsid);
 		follower.streets_followed = 1;
-		
+
 		follower.sendActivity("You started following " + this.label + ".");
-		
+
 		if (!this.followers) {
 			this.followers = {};
 		}
 		this.followers[follower.tsid] = follower.label;
-		
+
 		follower.followee = this.tsid;
-		
+
 		this.updateGlitchTrain(this.location);
-		
+
 		// Update all followers:
 		var list = this.followers;
 		for (var tsid in list) {
@@ -1544,13 +1544,13 @@ function goToNewNewStartingLevel(){
 	delete this.intro_steps;
 	delete this.has_done_intro;
 	delete this.no_reset_teleport;
-	
+
 	var tsid = config.newxp_locations['newxp_intro'];
 	var instance_id = 'newxp_intro';
-	
+
 	for (var i in this.instances.instances){
 		this.instances_left(i);
-		
+
 		delete this.instances.instances[i];
 		delete this.instances.previously[i];
 	}
@@ -1569,7 +1569,7 @@ function goToNewNewStartingLevel(){
 }
 
 function goToFallingLevel(exit){
-	
+
 	var tsid = config.is_dev ? 'LHH12F9DO801RUL' : 'LLI12DVTLA01HT5';
 	var instance = this.instances_create('falling', tsid, {instance_label: 'You Feel Woooooozy...', no_auto_return: true});
 	if (instance){
@@ -1588,9 +1588,9 @@ function goToFallingLevel(exit){
 
 // Find the best greeting/intro location for new players
 function getGreetingLocation(){
-	
+
 	config.greeting_locations.sort(function(){ return 0.5 - Math.random(); }); // Shuffle the greeting locations
-	
+
 	var best = null;
 	var lowest_count = 0;
 	for (var i=0; i<config.greeting_locations.length; i++){
@@ -1603,7 +1603,7 @@ function getGreetingLocation(){
 			}
 		}
 	}
-	
+
 	if (best){
 		var idx = randInt(0, best.x.length-1);
 		return {tsid: best.tsid, x: best.x[idx], y: best.y[idx]};
@@ -1616,7 +1616,7 @@ function getGreetingLocation(){
 
 // Takes greeters to a greeting location in need of greeters
 function greeterGoToGreetingLocation(){
-	
+
 	var best = null;
 	var highest_ratio = 0;
 	for (var i=0; i<config.greeting_locations.length; i++){
@@ -1627,17 +1627,17 @@ function greeterGoToGreetingLocation(){
 				best = config.greeting_locations[i];
 				break;
 			}
-			
+
 			var player_count = num_keys(loc.getActivePlayers());
 			var ratio = (player_count-greeter_count) / greeter_count;
-			
+
 			if (!best || ratio > highest_ratio){
 				best = config.greeting_locations[i];
 				highest_ratio = ratio;
 			}
 		}
 	}
-	
+
 	if (best){
 		var idx = randInt(0, best.x.length-1);
 		var ret = this.teleportToLocation(best.tsid, best.x[idx], best.y[idx]);
@@ -1653,7 +1653,7 @@ var collectible_item_classes = ['gameserver', 'collectors_edition_2010_glitchmas
 function resetForTesting(skip){
 
 	log.info(this+' resetForTesting');
-	
+
 	//
 	// wherein we reset most stuff, but not social connections
 	//
@@ -1662,10 +1662,10 @@ function resetForTesting(skip){
 	var tokens_to_refund = 0;
 	var items_to_restore = [];
 	var items = this.apiGetAllItems();
-	
+
 	for (var i in items){
 		if (!items[i] || items[i].is_bag) continue;
-			
+
 		// Collectibles, which should not be deleted!
 		if (in_array(items[i].class_tsid, this.collectible_item_classes)){
 			items_to_restore.push(items[i].class_tsid);
@@ -1674,7 +1674,7 @@ function resetForTesting(skip){
 		if (items[i].class_tsid == 'teleportation_script' && items[i].is_imbued){
 			tokens_to_refund++;
 		}
-		
+
 		items[i].apiDelete();
 	}
 
@@ -1713,16 +1713,16 @@ function resetForTesting(skip){
 	this.metabolics_recalc_limits();
 	this.metabolics_set_energy(100);
 	this.metabolics_set_mood(100);
-		
+
 	// Food counter
 	this.food_today = 0;
-	
+
 	// Meditation counters
 	this.radiation_today = 0;
-	
+
 	// Deaths!
 	this.deaths_today = 0;
-	
+
 	delete this.kindly_randomness;
 	delete this.giants_donated;
 	delete this.physics;
@@ -1776,7 +1776,7 @@ function resetForTesting(skip){
 		if (items[i].class_tsid == 'teleportation_script' && items[i].is_imbued){
 			tokens_to_refund++;
 		}
-		
+
 		items[i].apiDelete();
 	}
 
@@ -1784,7 +1784,7 @@ function resetForTesting(skip){
 	if (tokens_to_refund){
 		this.teleportation_give_tokens(tokens_to_refund, "Imbued Teleportation Script refund");
 	}
-	
+
 	// Restore items
 	for (var i in items_to_restore){
 		this.createItemFromFamiliar(items_to_restore[i], 1);
@@ -1805,7 +1805,7 @@ function resetForTesting(skip){
 	// Physician, heal thyself!
 	//
 
-	
+
 	delete this.grapes_squished;
 	delete this.resurrect_location;
 
@@ -1840,36 +1840,36 @@ function performPostProcessing(msg){
 	// If this is a move_xy, but they didn't actually move, then quit here
 	// move_xy without an actual move is likely a state change
 	if (msg.type == 'move_xy' && !this['!actually_moved']) return;
-	
+
 
 	// Butler hints:
 	//log.info("msg is "+msg.type);
 	if (msg.type == "global_chat" || (msg.type == "groups_chat_join" && in_array_real(msg.tsid, config.global_chat_groups))) { this.global_chatter = true; }
-	
+
 	// Interrupt meditation
 	if (this['!meditating']){
-		// meditation also stops if the user sends any chat message (global, party or IM), receives an IM from another player (but party/local/global chat are ok) 
+		// meditation also stops if the user sends any chat message (global, party or IM), receives an IM from another player (but party/local/global chat are ok)
 		// or performs a verb on a different item
-		
+
 		// Upgrades: meditative_arts_less_distraction = not distracted by incoming messages
 		//           meditative_arts_less_distraction_2 = not distracted by outgoing messages
 		var meditation_ok_copy = meditation_ok_types.slice();
 		if (this.imagination_has_upgrade("meditative_arts_less_distraction")) {
 			meditation_ok_copy.push("im_recv"); // only one incoming type that distracts
 		}
-		
+
 		if (this.imagination_has_upgrade("meditative_arts_less_distraction_2")) {
 			meditation_ok_copy.push("local_chat", "local_chat_start", "party_chat", "groups_chat", "groups_chat_leave", "groups_chat_join", "global_chat", "im_send");
 		}
-		
+
 		//log.info(this+" meditation_ok types "+meditation_ok_copy);
-		
+
 		var interrupt = true;
 		// Ignore buff ticks while in wintry place
 		if (this.location.tsid == 'LM413ATO8PR54' || this.location.tsid == 'LLI11ITO8SBS6' || this.location.tsid == 'LM11E7ODKHO1QJE'){
 			if (msg.type == 'buff_tick') interrupt = false;
 		}
-		
+
 		// this is accomplished by explicitly ignoring allowed actions -- anything else interrupts
 		if (interrupt && !in_array(msg.type, meditation_ok_copy) && !in_array(msg.verb, this.meditation_ok_verbs)){
 			// Find their orb and cancel meditation
@@ -1882,7 +1882,7 @@ function performPostProcessing(msg){
 			}
 		}
 	}
-	
+
 	// Interrupt the "Please Wait" buff
 	if (this.buffs_has('please_wait')){
 		if (!in_array(msg.type, this.please_wait_ok_types)){
@@ -1903,15 +1903,15 @@ function performPostProcessing(msg){
 			}
 		}
 	}
-	
+
 	// Things we do when you move
 	if (msg.type == 'move_xy' && this['!moved_lat'] >= 150){
 		if (this['!dismiss_overlay']){
-			this.events_add({overlay: this['!dismiss_overlay'], callback: 'dismiss_overlay_event'}, 1);	
+			this.events_add({overlay: this['!dismiss_overlay'], callback: 'dismiss_overlay_event'}, 1);
 			delete this['!dismiss_overlay'];
 		}
 		else if (this.run_overlay_onmove){
-			this.events_add({overlay: this.run_overlay_onmove, callback: 'run_overlay_event'}, 1);	
+			this.events_add({overlay: this.run_overlay_onmove, callback: 'run_overlay_event'}, 1);
 			delete this.run_overlay_onmove;
 		}
 		else if (this.apply_buff){
@@ -1935,15 +1935,15 @@ function moveAvatar(x, y, face, why){
 		x:	intval(x),
 		y:	intval(y)
 	};
-	
+
 	if (config.is_dev && why) {
 		rsp.why = why;
 	}
-	
+
 	if (face == 'left' || face == 'right'){
 		rsp.face = face;
 	}
-	
+
 	this.apiSendMsgAsIs(rsp);
 }
 
@@ -1954,12 +1954,12 @@ function faceAvatar(face, force){
 		type:	'move_avatar',
 		face:	face
 	};
-	
+
 	if (force) {
 		rsp.force = true;
 	}
 
-	
+
 	this.apiSendMsgAsIs(rsp);
 }
 
@@ -1969,7 +1969,7 @@ function playEmotionAnimation(em){
 		log.error('unknown emotion: '+em);
 		return;
 	}
-	
+
 	this.apiSendMsgAsIs({
 		type:	'play_emotion',
 		emotion: em
@@ -2022,11 +2022,11 @@ function moveCamera(x, from_edge){
 		type:	'camera_offset',
 		x:	intval(x)
 	};
-	
+
 	if (from_edge){
 		rsp['camera_offset_from_edge'] = true;
 	}
-	
+
 	this.apiSendMsgAsIs(rsp);
 }
 
@@ -2098,12 +2098,12 @@ function make_hash_with_location(){
 		is_guide	: this.is_guide ? true : false,
 		home_info	: this.houses_get_login_new()
 	};
-	
+
 	out['physics_adjustments'] = this.reducePhysicsAdjustmentsToMinumum(this.getStackedPhysics());
 
 	var props = this.avatar_get_pc_msg_props();
 	for (var i in props) out[i] = props[i];
-	
+
 	this.games_add_msg_props(out);
 
 	return out;
@@ -2123,7 +2123,7 @@ function make_hash_with_avatar(){
 		is_guide	: this.is_guide ? true : false,
 		home_info	: this.houses_get_login_new()
 	};
-	
+
 	var props = this.avatar_get_pc_msg_props();
 	for (var i in props) out[i] = props[i];
 
@@ -2193,42 +2193,42 @@ function getPrefs() {
 	if (!this.prefs) {
 		this.prefs = {};
 	}
-	
+
 	// make sure they have all the default values
 	//---------------------------------------------------------
-	
+
 	if (!('int_menu_more_quantity_buttons' in this.prefs)) {
 		this.prefs.int_menu_more_quantity_buttons = false;
 	}
-	
+
 	if (!('int_menu_default_to_one' in this.prefs)) {
 		this.prefs.int_menu_default_to_one = false;
 	}
-	
+
 	if (!('do_oneclick_pickup' in this.prefs)) {
 		this.prefs.do_oneclick_pickup = true;
 	}
-	
+
 	if (!('do_stat_count_animations' in this.prefs)) {
 		this.prefs.do_stat_count_animations = true;
 	}
-	
+
 	if (!('do_power_saving_mode' in this.prefs)) {
 		this.prefs.do_power_saving_mode = true;
 	}
-	
+
 	if (!('up_key_is_enter' in this.prefs)) {
 		this.prefs.up_key_is_enter = false;
 	}
-	
+
 	// correct for old pref names
 	//---------------------------------------------------------
-		
+
 	if ('no_oneclick_pickup' in this.prefs) {
 		this.prefs.do_oneclick_pickup = !this.prefs.no_oneclick_pickup;
 		delete this.prefs.no_oneclick_pickup;
 	}
-	
+
 	// go go go
 	return this.prefs;
 }
@@ -2237,14 +2237,14 @@ function setPrefs(new_prefs) {
 	if (new_prefs) {
 		this.prefs = new_prefs;
 	}
-	
+
 	return this.getPrefs();
 }
 
 
 function openInputBox(uid, title, args){
 	// http://tools.tinyspeck.com/pastebin/852
-	
+
 	var rsp = {
 		type: 'input_request',
 
@@ -2256,7 +2256,7 @@ function openInputBox(uid, title, args){
 	for (var i in args){
 		rsp[i] = args[i];
 	}
-	
+
 	this.apiSendMsgAsIs(rsp);
 }
 
@@ -2304,7 +2304,7 @@ function inputBoxResponse(msg){
 			});
 		}
 	}
-	
+
 	// Something else
 }
 
@@ -2343,11 +2343,11 @@ function reloadGeometry(x, y, type){
 
 function get_meditation_bonus(){
 	// We are now adjusting the meditation limit based on upgrades instead of skill level.
-	
-	if (this.imagination_has_upgrade("meditative_arts_daily_limit_2")) { 
+
+	if (this.imagination_has_upgrade("meditative_arts_daily_limit_2")) {
 		return 1.5;
 	}
-	else if (this.imagination_has_upgrade("meditative_arts_daily_limit_1")) { 
+	else if (this.imagination_has_upgrade("meditative_arts_daily_limit_1")) {
 		return 1.25;
 	}
 	else {
@@ -2373,7 +2373,7 @@ function onPeriodicEnergyLoss(){
 			this.metabolics_lose_energy(to_lose, 1);
 		}
 	}
-	
+
 	this.apiCancelTimer('onPeriodicEnergyLoss');
 	this.apiSetTimer('onPeriodicEnergyLoss', 90000);
 }
@@ -2382,13 +2382,13 @@ function onPeriodicEnergyLoss(){
 function onPlayTimeCheck() {
 
 	if (!this.isOnline()) return;
-	
+
 	var play_time = this.getTimePlayed();
 	play_time += time() - this.date_last_loggedin;
-	
+
 	// If the player already has the 11 hour achievement, stop checking.
 	if (this.achievements_has('major_player')) return;
-	
+
 	if (play_time >= 39600) {
 		this.achievements_grant('major_player');
 	}
@@ -2437,9 +2437,9 @@ function clearDoNotDisturb(){
 }
 
 function buildPath(dst, src){
-	
+
 	var dst_array = (typeof dst == 'object' && dst.length);
-	
+
 	//
 	// Figure out where we're coming from. If not told, then it's our current location.
 	// If the start street is *really* something else, use that instead (instances go from their templates, etc)
@@ -2485,7 +2485,7 @@ function buildPath(dst, src){
 	//
 	// Ok, build a path
 	//
-	
+
 	var dst_street;
 	var path;
 
@@ -2495,7 +2495,7 @@ function buildPath(dst, src){
 
 	if (dst_array){
 		var fix_dst = [];
-		
+
 		for (var i in dst){
 			dst_street = apiFindObject(dst[i]);
 			if (!dst_street){
@@ -2513,7 +2513,7 @@ function buildPath(dst, src){
 			if (src == dst_street){
 				return {ok: 0, error: "You're already there! (or really, really close)", non_fatal: 1};
 			}
-			
+
 			fix_dst.push(dst_street);
 		}
 
@@ -2523,19 +2523,19 @@ function buildPath(dst, src){
 	}
 	else{
 		dst_street = apiFindObject(dst);
-	
+
 		if (dst_street.instance_of){
 			dst = dst_street.instance_of;
 		}
 		else if (dst_street.mapLocation){
 			dst = dst_street.mapLocation;
 		}
-	
+
 		// Don't path to the destination we're already on
 		if (src == dst){
 			return {ok: 0, error: "You're already there! (or really, really close)", non_fatal: 1};
 		}
-	
+
 		if (config.is_dev) log.info(this+' apiFindGlobalPathX: '+src+', '+dst);
 		path = apiFindGlobalPathX(src, dst);
 
@@ -2555,9 +2555,9 @@ function buildPath(dst, src){
 	if (!street){
 		return {ok: 0, error: "Destination not found"};
 	}
-	
+
 	this.setPath(path);
-	
+
 	return {ok: 1, path: this.getPathRsp()};
 }
 
@@ -2631,7 +2631,7 @@ function updateMap(){
 
 function sneeze(){
 	this.announce_sound('SNEEZING_AHCHOO');
-	
+
 	// Don't lock everyone during sneezing
 	var annc = {
 			type: 'pc_overlay',
@@ -2785,7 +2785,7 @@ function isFreeGreeter(){
 		if (this.games_is_playing()) return false;
 		if (this.isGuideOnDuty()) return false;
 		if (!this.groups_is_in_chat(config.greeter_group)) return false;
-		
+
 		//if (this.location.isGreetingLocation() && this.location.countGreeters() < this.location.getNumActivePlayers() && this.location.countGreeters() == 1) return false;
 		//if (this.location.isGreetingLocation() && (!this.is_god || this.tsid == 'PLI16FSFK2I91')) return false;
 		if (this.location.isGreetingLocation()) return false;
@@ -2795,7 +2795,7 @@ function isFreeGreeter(){
 
 		return true;
 	}
-	
+
 	return false;
 }
 
@@ -2838,7 +2838,7 @@ function greeter_training_callback(value, details){
 var valid_callout_sections = ['character', 'level', 'xp', 'energy', 'mood', 'currants', 'familiar', 'mini_map', 'buffs', 'chat_friends', 'chat_help', 'chat_local', 'chat_party', 'backpack', 'clock', 'volume_control', 'chat_active'];
 function ui_callout(section, duration){
 	if (!in_array_real(section, this.valid_callout_sections)) return false;
-	
+
 	this.apiSendMsg({
 		type: "ui_callout",
 		section: section,
@@ -2846,7 +2846,7 @@ function ui_callout(section, duration){
 		scale: 1, //how much to scale the overlay (if not set will assume "1")
 		display_time: intval(duration) //how long to show it in ms (if not set default is 5000 -- if set to 0 it never goes away until a ui_callout_cancel is sent)
 	});
-	
+
 	return true;
 }
 
@@ -2866,11 +2866,11 @@ function placeInTimeout(args){
 	};
 
 	utils.http_get('callbacks/player_update.php', args);
-	
+
 	//
 	// Kick offline
 	//
-	
+
 	var msg = "Your account has been suspended.";
 	var url = "/";
 
@@ -2879,13 +2879,13 @@ function placeInTimeout(args){
 
 		if (args.url) url = args.url;
 	}
-	
+
 	var rsp = {
 		type:"booted",
 		msg: msg,
 		url: url
 	};
-	
+
 	this.apiSendMsg(rsp);
 }
 
@@ -2970,7 +2970,7 @@ function doNaughtySplanking(){
 		size: "225%",
 	};
 	this.apiSendAnnouncement(rsp);
-	
+
 	this.naughty_splanking.delivered++;
 
 	this.apiSetTimer('doNaughtySplanking',this.naughty_splanking.spacing*1000);
@@ -2998,7 +2998,7 @@ function onQuickReg(args){
 	if (args && args.new_token){
 		this.apiSendMsg({type: 'new_api_token', token: args.new_token});
 	}
-	
+
 	delete this.quickstart_needs_account;
 	this.changeUIComponent('create_account', false);
 
@@ -3024,16 +3024,16 @@ function show_rainbow(overlay_key, delay){
 		height: 400,
 		dont_keep_in_bounds:true
 	};
-	
+
 	if (delay) args.delay_ms = delay;
-	
+
 	if (overlay_key == 'rainbow_secretspot') {
 		this.apiSendAnnouncement(args);
 	}
 	else {
 		this.location.apiSendAnnouncement(args);
 	}
-	
+
 	switch (overlay_key){
 		case 'rainbow_100coinstoday':
 			this.announce_sound('RAINBOW_100COINSTODAY', 0, 0, true);
@@ -3075,7 +3075,7 @@ function stopFollowing() {
 		if(followee && list && list[this.tsid]) {
 			delete list[this.tsid];
 			followee.updateGlitchTrain(followee.location);
-			
+
 			// Update rest of followers:
 			for (var other in list) {
 				var pc = getPlayer(other);
@@ -3083,15 +3083,15 @@ function stopFollowing() {
 			}
 		}
 	}
-	
+
 	this.updateGlitchTrain(this.location);
-	
+
 	delete this.followee;
 }
 
 function removeFollowers() {
 	this.apiRemoveAllFollowers();
-	
+
 	// Remove followers from our list of follower references
 	for(var follower in this.followers) {
 		var follow_pc = getPlayer(follower);
@@ -3114,33 +3114,33 @@ function getFollowee(){
 
 /**
 	Support for the Glitch Train achievement. Count the length of a conga line following this player. This player is included in the count.
-	
+
 	Takes the name of the current location, and updates the counter for that location.
 */
 function updateGlitchTrain(location){
-	
-	// A "conga line" consists of lots of players following one leader. 
-	// So, either this player is being followed by 19 other players, or this player is following somebody 
+
+	// A "conga line" consists of lots of players following one leader.
+	// So, either this player is being followed by 19 other players, or this player is following somebody
 	// who is being followed by 19 players.
-	
+
 	var chain_length = this.countFollowers();	// if this number is non-zero, then this player is the leader
-	
+
 	var leader = getPlayer(this.followee);		// otherwise, get the leader
-	
+
 	if (leader) {
 		chain_length += leader.countFollowers(); // includes this player
 	}
-	
+
 	chain_length ++; // add in the leader
-	
+
 	//this.sendActivity('Total chain length: '+chain_length);
-	
+
 	var required_length = 20;
-	
+
 	if (config.is_dev){
 		required_length = 3;	// easier testing
 	}
-	
+
 	// Increment glitch train if chain is at least 20
 	if (chain_length >= required_length) {
 		this.achievements_increment('glitch_train', location);
@@ -3166,11 +3166,11 @@ function admin_updateHelpCase(args){
 
 function onPlayerCollision(pc){
 	log.info(this+' collided with '+pc+'!!!');
-	
+
 	if (this.buffs_has('feeling_called_love') && !pc.buffs_has('feeling_called_love')){
 		this.buffs_transfer_love(pc);
 	}
-	
+
 	this.games_handle_player_collision(pc);
 }
 
@@ -3213,11 +3213,11 @@ function lastActiveCallback(type){
 
 function sorryForDeletingYourTPTarget(){
 	if (this.already_sorry) return true;
-	 
+
 	var bag = this.mail_get_bag();
 	if (!bag) return false;
 	var slot = bag.firstEmptySlot();
-	
+
 	var s = apiNewItemStack('note', 1);
 	if (!s){
 		log.error("Couldn't create apology note for player "+this);
@@ -3248,8 +3248,8 @@ function sorryForDeletingYourTPTarget(){
 	if (bag.addItemStack(s, slot)){
 		log.error("Failed to add apology note "+s+" to player "+this);
 		return false;
-	} 
-	
+	}
+
 	this.teleportation_give_tokens(7, "Sorry for deleting your Teleportation target.");
 	this.mail_add_player_delivery(s.tsid, null, 0, "Here's a special delivery just for you!", config.mail_delivery_time_with_attachment, false);
 	this.already_sorry = true;
@@ -3275,9 +3275,9 @@ function getLocation(){
 // Keys are rescinded immediately, though, to stop puppet/alt-shenanigans
 //
 function deletePlayer(){
-	
+
 	log.info("Deleting player "+this.tsid);
-	
+
 	this.is_deleted = true;
 
 	this.skills_cancel_learning();
@@ -3292,16 +3292,16 @@ function deletePlayer(){
 	//
 	// Kick offline
 	//
-	
+
 	var msg = "Your account has been deleted.";
 	var url = "/";
-	
+
 	var rsp = {
 		type:"booted",
 		msg: msg,
 		url: url
 	};
-	
+
 	this.apiSendMsg(rsp);
 }
 
@@ -3312,7 +3312,7 @@ function undeletePlayer(){
 	log.info("Undeleting player "+this.tsid);
 
 	delete this.is_deleted;
-	
+
 	this.buddies_update_reverse_cache();
 }
 
@@ -3369,7 +3369,7 @@ function buildMachine(machine_id, current_part, step){
 	    !this.items_has('blockmaker_plates', 1)){
 		return;
 	}
-	
+
 	var new_part_class_tsid;
 	log.info('BUILDMACHINE: step: '+step);
 	if (machine_id == 'blockmaker'){
@@ -3377,7 +3377,7 @@ function buildMachine(machine_id, current_part, step){
 			case 1:{ new_part_class_tsid = 'blockmaker_chassis'; break; }
 		}
 	}
-	
+
 	log.info('BUILDMACHINE: new_part_class_tsid: '+new_part_class_tsid);
 	if (!new_part_class_tsid) return false;
 

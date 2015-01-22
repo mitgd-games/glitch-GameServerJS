@@ -1,7 +1,7 @@
 
 function getPlayer(tsid){
 	if (!tsid) return null;
-	
+
 	var pc = apiFindObject(tsid);
 	if (pc === null || pc === undefined) return null;
 
@@ -15,7 +15,7 @@ function time(){
 }
 
 function current_gametime(){
-	var ts = intval(Math.round(getTime() / 1000));
+	var ts = time();
 	return this.timestamp_to_gametime(ts);
 }
 
@@ -42,7 +42,7 @@ function gametime_to_key(gt){
 
 function current_game_month(){
 	var gt = current_gametime();
-	
+
 	return config.game_month_names[gt[1]-1];
 }
 
@@ -166,7 +166,7 @@ function is_same_day(gametime1, gametime2){
 	if (gametime1[0] === gametime2[0] && gametime1[1] === gametime2[1] && gametime1[2] === gametime2[2]){
 		return true;
 	}
-	
+
 	return false;
 }
 
@@ -174,11 +174,11 @@ function is_same_day(gametime1, gametime2){
 function game_days_since(gametime){
 	var current_time = time();
 	var ts = intval(Math.round(gametime_to_timestamp(gametime)));
-	
+
 	var diff = current_time - ts; // this is the number of seconds since the given time
-	
+
 	if (diff < 0) { return 0; } // time is in the future?
-	
+
 	// From above:
 	// there are 14400 real seconds in a game day
 	var gdays = intval(Math.round(diff / 14400));
@@ -186,55 +186,55 @@ function game_days_since(gametime){
 }
 
 // This returns a whole number of game days.
-function game_days_since_ts(timestamp) { 
+function game_days_since_ts(timestamp) {
 	var current_time = getTime();
-	
-	var diff = current_time - timestamp; 
-	
+
+	var diff = current_time - timestamp;
+
 	if (diff < 0) { return 0; } // time is in the future?
-	
+
 	// From above:
 	// there are 14400 real seconds in a game day
 	var gdays = intval(Math.round(diff / game_days_to_ms(1)));
 	return gdays;
 }
 
-// Converts a number of seconds to a string for display. 
+// Converts a number of seconds to a string for display.
 // Handles minutes but not hours
 function secondsToString(secs) {
-	if (secs >= 60) { 
+	if (secs >= 60) {
 		var wholeMins = Math.floor(secs/60);
 		var wholeSeconds = secs-(wholeMins*60);
-		
-		if (wholeMins == 1) { 
+
+		if (wholeMins == 1) {
 			var minWord = "minute";
 		}
-		else { 
+		else {
 			var minWord = "minutes";
 		}
-	
-		if (wholeSeconds == 1) { 
+
+		if (wholeSeconds == 1) {
 			var secWord = "second";
 		}
 		else {
 			var secWord = "seconds";
 		}
-		
-		if (wholeSeconds) { 
+
+		if (wholeSeconds) {
 			return (""+wholeMins+" "+minWord+" and "+wholeSeconds+" "+secWord);
 		}
-		else { 
+		else {
 			return (""+wholeMins+" "+minWord);
 		}
 	}
 	else {
-		if (secs == 1) { 
+		if (secs == 1) {
 			var secWord = "second";
 		}
 		else {
 			var secWord = "seconds";
 		}
-	
+
 		return ""+secs+" "+secWord;
 	}
 }
@@ -244,10 +244,10 @@ function secondsToString(secs) {
 function isBirthday(pc) {
 	var gt = timestamp_to_gametime(pc.ts/1000);
 	var today = current_gametime();
-	
+
 	log.info("BIRTHDAY "+gt);
 	log.info("BIRTHDAY "+today);
-	
+
 	if (gt[1] == today[1] // month
 	&&  gt[2] == today[2] // day
 	   )
@@ -255,9 +255,9 @@ function isBirthday(pc) {
 		var years = today[0] - gt[0];
 		return years;
 	}
-	
+
 	return false;
-}	
+}
 
 //
 // Zilloween items become functional on the 25th of Remember, and stay functional until the end of
@@ -267,7 +267,7 @@ function isZilloween() {
 
 	// Special for end of the world:
 	return true;
-	
+
 	// Special for Halloween 2012 - start 6pm PST on the 30th, runs for 48 hours
 	var now = time();
 	var start = 1351645200;
@@ -275,17 +275,17 @@ function isZilloween() {
 	if (now > start && now < end) {
 		return true;
 	}
-	
+
 	var month = current_game_month();
 	if (month == 'Remember') {
 		var gt = current_gametime();
 		var day = gt[2];	// game day
-		
+
 		if (day >= 25){
 			return true;
 		}
 	}
-	
+
 	return false;
 }
 
@@ -298,18 +298,18 @@ function isGlitchmas() {
 	if (getTime()/1000 < 1325613600){
 		return true;
 	}
-	
+
 	// Special for testing:
 	if (config.is_dev){
 		return false;
 	}
-	
+
 	return false;
 }
 
 function isPiDay(){
 	var date = new Date();
-	
+
 	// Months are zero indexed but days aren't for some reason.
 	if ((date.getUTCMonth() +1) == 3){
 		if  (date.getUTCDate() == 14){
@@ -326,7 +326,7 @@ function isPiDay(){
 			return true;
 		}
 	}
-	
+
 	//log.info("month is "+(date.getMonth()+1)+" and day is "+date.getDate());
 	return false;
 }
@@ -339,12 +339,12 @@ function numberth(number){
 		if (number_ten == 2) numberth = number+'nd';
 		if (number_ten == 3) numberth = number+'rd';
 	}
-	
+
 	return numberth;
 }
 
 function numberth_word(number){
-	
+
 	return config.numbers_to_words[number];
 }
 
@@ -383,7 +383,7 @@ function first_property(obj) {
 function choose_property(obj) {
 	var k = 0;
 	var n = randInt(0, num_keys(obj)-1);
-	
+
 	for(var i in obj) {
 		if(k == n) {
 			return obj[i];
@@ -396,7 +396,7 @@ function choose_property(obj) {
 function choose_key(obj) {
 	var k = 0;
 	var n = randInt(0, num_keys(obj)-1);
-	
+
 	for(var i in obj) {
 		if(k == n) {
 			return i;
@@ -412,23 +412,23 @@ function num_keys(a){
 	return c;
 }
 
-function numValidKeys(a) { 
+function numValidKeys(a) {
 	var c = 0;
 	for (var i in a) {
-		if (a[i]) { 
+		if (a[i]) {
 			c ++;
 		}
 	}
-	
+
 	return c;
 }
 
-function is_array(a) { 
-	
-	if (/Array/.exec(toString.call(a))) { 
+function is_array(a) {
+
+	if (/Array/.exec(toString.call(a))) {
 		return true;
 	}
-	
+
 	return false;
 }
 
@@ -509,7 +509,7 @@ function make_item(item, pc){
 	if (!item.isSelectable(pc)) ret.not_selectable = true; // Probably just a new message type to turn it on/off
 	ret.soulbound_to = (item.isSoulbound() && item.soulbound_to) ? item.soulbound_to : null;
 	if (item.getSubClass) ret.subclass_tsid = item.getSubClass();
-	
+
 	// Is this a bag?
 	if (item.is_bag && !item.hasTag('not_openable')){
 		ret.slots = item.capacity;
@@ -519,12 +519,12 @@ function make_item(item, pc){
 		}
 
 	}
-	
+
 	// Config?
 	if (item.make_config){
 		ret.config = item.make_config();
 	}
-	
+
 	// Rooked status
 	if (item.isRookable()){
 		if (item.isRooked()){
@@ -534,7 +534,7 @@ function make_item(item, pc){
 			ret.rs = false;
 		}
 	}
-	
+
 	return ret;
 }
 
@@ -550,7 +550,7 @@ function make_item_simple(item){
 	if (config.is_dev){
 		ret.ctor_func = 'make_item_simple';
 	}
-	
+
 	return ret;
 }
 
@@ -569,7 +569,7 @@ function make_bag(bag, pc){
 				version: it.version,
 				path_tsid: it.path
 			};
-			
+
 			if (it.z) itemstacks[it.tsid].z = it.z;
 			if (it.state) itemstacks[it.tsid].s = it.buildState();
 			if (it.is_tool) itemstacks[it.tsid].tool_state = it.get_tool_state();
@@ -578,14 +578,14 @@ function make_bag(bag, pc){
 			if (it.getTooltipLabel) itemstacks[it.tsid].tooltip_label = it.getTooltipLabel();
 			if (pc && !it.isSelectable(pc)) itemstacks[it.tsid].not_selectable = true; // Probably just a new message type to turn it on/off
 			itemstacks[it.tsid].soulbound_to = (it.isSoulbound() && it.soulbound_to) ? it.soulbound_to : null;
-			
+
 			// Config?
 			if (it.make_config) itemstacks[it.tsid].config = it.make_config();
-			
+
 			// Is this a bag?
 			if (it.is_bag && !it.hasTag('not_openable')){
 				itemstacks[it.tsid].slots = it.capacity;
-				
+
 				var sub = make_bag(it);
 				for (var i in sub){
 					itemstacks[i] = sub[i];
@@ -593,7 +593,7 @@ function make_bag(bag, pc){
 			}
 		}
 	}
-	
+
 	return itemstacks;
 }
 
@@ -614,7 +614,7 @@ function make_location(location, pc){
 		var item = location.items[i];
 		if (!item || !item.isVisibleTo(pc)) continue;
 		out.itemstacks[item.tsid] = make_item(item, pc);
-		
+
 	}
 
 	return out;
@@ -637,11 +637,11 @@ function get_recipe(id){
 					}
 				}
 			}
-			
+
 			if (prot.recipes[id].tool_verb) break;
 		}
 	}
-	
+
 	if (prot.recipes[id] && prot.recipes[id].inputs){
 		// Find consumables
 		for (var i=0; i<prot.recipes[id].inputs.length; i++){
@@ -654,7 +654,7 @@ function get_recipe(id){
 			}
 		}
 	}
-	
+
 	return prot.recipes[id];
 }
 
@@ -668,7 +668,7 @@ function get_recipe_ids_for_skill(skill_id){
 			recipe_ids.push(i);
 		}
 	}
-	
+
 	return recipe_ids;
 }
 
@@ -681,7 +681,7 @@ function in_array(needle, haystack){
 
 function in_array_real(needle, haystack){
 	if (!haystack) return 0;
-	
+
 	for (var i=0; i<haystack.length; i++){
 		if (haystack[i] == needle) return 1;
 	}
@@ -862,14 +862,14 @@ function get_item_name_from_class(class_tsid, plural, include_article){
 					article = prot.article+' ';
 				}
 			}
-			
+
 			if (plural){
 				return article+prot.name_plural;
 			}else{
 				return article+prot.name_single;
 			}
 		}
-	} catch(e) {	
+	} catch(e) {
 	}
 	return '';
 }
@@ -913,10 +913,10 @@ function getCurrentSequence(key){
 
 
 function linkifyPlayer(pc, possessive){
-	if (!possessive) { 
+	if (!possessive) {
 		var txt = "<a href=\"event:player_info|"+pc.tsid+"\">"+utils.escape(pc.label)+"</a>";
 	}
-	else { 
+	else {
 		var txt = "<a href=\"event:player_info|"+pc.tsid+"\">"+utils.escape(pc.label+"'s")+"</a>";
 	}
 
